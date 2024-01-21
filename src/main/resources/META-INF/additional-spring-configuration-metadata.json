@@ -1,0 +1,8 @@
+{
+  "properties": [
+    {
+      "name": "cherikcoders.springAutoUI.detectionType",
+      "type": "java.lang.String",
+      "description": "detection strategy type."
+    }
+  ] }
