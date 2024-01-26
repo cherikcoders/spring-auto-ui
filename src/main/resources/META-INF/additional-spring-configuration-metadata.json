@@ -7,9 +7,10 @@
       "description": "detection strategy type."
     },
     {
-      "name": "spring-auto-ui.packages-to-scan",
+      "name": "spring-auto-ui.package-to-scan",
       "type": "java.lang.String",
       "defaultValue": "",
       "description": "The package(s) that contain your @Controller/@ResController classes. (accepts multiple comma separated values)"
     }
-  ] }
+  ]
+}
