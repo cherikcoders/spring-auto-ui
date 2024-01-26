@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 public class PropertiesConfiguration {
 
     private DetectionTypeEnum detectionType = DetectionTypeEnum.INCLUDE;
+    private String packageToScan="";
 
     public DetectionTypeEnum getDetectionType() {
         return detectionType;
@@ -18,5 +19,13 @@ public class PropertiesConfiguration {
 
     public void setDetectionType(DetectionTypeEnum detectionType) {
         this.detectionType = detectionType;
+    }
+
+    public String getPackageToScan() {
+        return packageToScan;
+    }
+
+    public void setPackageToScan(String packageToScan) {
+        this.packageToScan = packageToScan;
     }
 }

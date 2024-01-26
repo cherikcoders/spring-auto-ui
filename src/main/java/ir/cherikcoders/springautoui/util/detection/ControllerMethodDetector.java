@@ -5,14 +5,14 @@ import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
 import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.config.BeanDefinition;
+import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
+import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Component
 public class ControllerMethodDetector {
@@ -27,21 +27,23 @@ public class ControllerMethodDetector {
     }
 
 
-    public List<Method> getDetectedMethods() {
+    public List<Method> getDetectedMethods() throws ClassNotFoundException {
 
         List<Method> detectedMethods = new ArrayList<>();
         List<Method> excludeMetods = new ArrayList<>();
         Map<String, Object> controllers = listableBeanFactory.getBeansWithAnnotation(Controller.class);
 
+        Set<Class<?>> controller2=scanControllers();
+
         switch (propertiesService.getDetectionType()) {
             case INCLUDE -> controllers.forEach((s, o) -> {
 
-                if (o.getClass().isAnnotationPresent(IncludeInUI.class)) {
+                if (!o.getClass().isAnnotationPresent(ExcludeFromUI.class)) {
                     detectedMethods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
                 } else {
 
                     for (Method method : o.getClass().getDeclaredMethods()) {
-                        if (method.isAnnotationPresent(IncludeInUI.class)) {
+                        if (!method.isAnnotationPresent(ExcludeFromUI.class)) {
                             detectedMethods.add(method);
                         }
                     }
@@ -51,11 +53,11 @@ public class ControllerMethodDetector {
                 controllers.forEach((s, o) -> {
 
                     detectedMethods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
-                    if (o.getClass().isAnnotationPresent(ExcludeFromUI.class)) {
+                    if (o.getClass().isAnnotationPresent(IncludeInUI.class)) {
                         excludeMetods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
                     } else {
                         for (Method method : o.getClass().getDeclaredMethods()) {
-                            if (method.isAnnotationPresent(ExcludeFromUI.class)) {
+                            if (method.isAnnotationPresent(IncludeInUI.class)) {
                                 excludeMetods.add(method);
                             }
                         }
@@ -67,6 +69,23 @@ public class ControllerMethodDetector {
 
         }
         return detectedMethods;
+    }
+
+    public Set<Class<?>> scanControllers() {
+        ClassPathScanningCandidateComponentProvider provider = new ClassPathScanningCandidateComponentProvider(false);
+        provider.addIncludeFilter(new AnnotationTypeFilter(Controller.class));
+
+        Set<Class<?>> controllerClasses = new HashSet<>();
+        for (BeanDefinition beanDefinition : provider.findCandidateComponents(propertiesService.getPackageToScan())) {
+            try {
+                Class<?> controllerClass = Class.forName(beanDefinition.getBeanClassName());
+                controllerClasses.add(controllerClass);
+            } catch (ClassNotFoundException e) {
+                // Handle exception if needed
+            }
+        }
+
+        return controllerClasses;
     }
 
 

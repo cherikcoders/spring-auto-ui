@@ -1,21 +1,24 @@
 package ir.cherikcoders.springautoui.util.propertiesConfig;
 
-import org.springframework.beans.factory.annotation.Value;
+import ir.cherikcoders.springautoui.util.config.PropertiesConfiguration;
 import org.springframework.stereotype.Component;
 
 @Component
 public class PropertiesService {
 
 
-    private final DetectionTypeEnum detectionTypeEnum;
+    private final PropertiesConfiguration propertiesConfiguration;
 
-    public PropertiesService(@Value("${spring-auto-ui.detection-type}") DetectionTypeEnum detectionTypeEnum) {
-        this.detectionTypeEnum = detectionTypeEnum;
+    public PropertiesService(PropertiesConfiguration propertiesConfiguration) {
+        this.propertiesConfiguration = propertiesConfiguration;
     }
 
-
     public DetectionTypeEnum getDetectionType() {
-        return detectionTypeEnum;
+        return propertiesConfiguration.getDetectionType();
+    }
+
+    public String getPackageToScan(){
+        return propertiesConfiguration.getPackageToScan();
     }
 
 }
