@@ -1,8 +1,8 @@
-package cherikcoders.springautoui.util.detection;
+package ir.cherikcoders.springautoui.util.detection;
 
-import cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
-import cherikcoders.springautoui.util.annotaions.IncludeInUI;
-import cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
+import ir.cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
+import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
+import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

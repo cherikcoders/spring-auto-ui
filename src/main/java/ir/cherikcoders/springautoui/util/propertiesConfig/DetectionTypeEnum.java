@@ -1,4 +1,4 @@
-package cherikcoders.springautoui.util.propertiesConfig;
+package ir.cherikcoders.springautoui.util.propertiesConfig;
 
 public enum DetectionTypeEnum  {
 
