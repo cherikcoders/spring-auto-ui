@@ -24,4 +24,9 @@ class SpringAutoUiApplicationTests {
         List<Method> detectedMethods = controllerMethodDetector.getDetectedMethods();
     }
 
+    @Test
+    void AllEndPointsDetail() throws ClassNotFoundException {
+        controllerMethodDetector.AllEndPointsDetail();
+    }
+
 }

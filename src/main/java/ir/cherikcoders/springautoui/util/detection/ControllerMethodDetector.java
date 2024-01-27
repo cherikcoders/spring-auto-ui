@@ -2,19 +2,23 @@ package ir.cherikcoders.springautoui.util.detection;
 
 import ir.cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
 import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
+import ir.cherikcoders.springautoui.util.detection.model.DetectedMethodModel;
 import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
 import org.springframework.core.type.filter.AnnotationTypeFilter;
-import org.springframework.core.type.filter.RegexPatternTypeFilter;
+import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 
 import java.lang.reflect.Method;
 import java.util.*;
-import java.util.regex.Pattern;
 
 @Component
 public class ControllerMethodDetector {
@@ -33,34 +37,37 @@ public class ControllerMethodDetector {
 
         List<Method> detectedMethods = new ArrayList<>();
         List<Method> excludeMetods = new ArrayList<>();
-        Map<String, Object> controllers = listableBeanFactory.getBeansWithAnnotation(Controller.class);
+//        Map<String, Object> controllers = listableBeanFactory.getBeansWithAnnotation(Controller.class);
 
-        Set<Class<?>> controller2=scanControllers();
+        Set<Class<?>> controller2 = scanControllers();
 
         switch (propertiesService.getDetectionType()) {
-            case INCLUDE -> controllers.forEach((s, o) -> {
 
-                if (!o.getClass().isAnnotationPresent(ExcludeFromUI.class)) {
-                    detectedMethods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
-                } else {
+            case INCLUDE -> controller2.forEach(aClass -> {
 
-                    for (Method method : o.getClass().getDeclaredMethods()) {
+                if (!aClass.isAnnotationPresent(ExcludeFromUI.class)) {
+                    for (Method method : aClass.getDeclaredMethods()) {
                         if (!method.isAnnotationPresent(ExcludeFromUI.class)) {
                             detectedMethods.add(method);
                         }
                     }
                 }
             });
-            case EXCLUDE -> {
-                controllers.forEach((s, o) -> {
 
-                    detectedMethods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
-                    if (o.getClass().isAnnotationPresent(IncludeInUI.class)) {
-                        excludeMetods.addAll(Arrays.asList(o.getClass().getDeclaredMethods()));
+            case EXCLUDE -> {
+                controller2.forEach(aClass -> {
+
+                    if (aClass.isAnnotationPresent(IncludeInUI.class)) {
+                        for (Method method : aClass.getDeclaredMethods()) {
+                            if (!method.isAnnotationPresent(ExcludeFromUI.class)) {
+                                detectedMethods.add(method);
+                            }
+                        }
+
                     } else {
-                        for (Method method : o.getClass().getDeclaredMethods()) {
+                        for (Method method : aClass.getDeclaredMethods()) {
                             if (method.isAnnotationPresent(IncludeInUI.class)) {
-                                excludeMetods.add(method);
+                                detectedMethods.add(method);
                             }
                         }
                     }
@@ -89,6 +96,40 @@ public class ControllerMethodDetector {
         }
 
         return controllerClasses;
+    }
+
+    public List<DetectedMethodModel> AllEndPointsDetail() throws ClassNotFoundException {
+
+        List<DetectedMethodModel> detectedMethodModels = new ArrayList<>();
+        List<Method> detectedMethods = this.getDetectedMethods();
+
+        for (Method detectedMethod : detectedMethods) {
+            DetectedMethodModel methodModel = new DetectedMethodModel();
+            methodModel.setHttpMethod(this.getHttpMethod(detectedMethod));
+
+
+            detectedMethodModels.add(methodModel);
+        }
+        return detectedMethodModels;
+    }
+
+    private HttpMethod getHttpMethod(Method method) {
+
+        RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
+        if (requestMapping != null) {
+            return HttpMethod.valueOf(requestMapping.method()[0].name());
+        } else {
+            if (method.getAnnotation(GetMapping.class) != null) {
+                return HttpMethod.GET;
+            } else if (method.getAnnotation(PostMapping.class) != null) {
+                return HttpMethod.POST;
+            } else if (method.getAnnotation(PutMapping.class) != null) {
+                return HttpMethod.PUT;
+            } else {
+                return HttpMethod.DELETE;
+            }
+
+        }
     }
 
 
