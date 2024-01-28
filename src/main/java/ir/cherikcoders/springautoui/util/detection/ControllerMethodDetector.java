@@ -4,6 +4,7 @@ import ir.cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
 import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
 import ir.cherikcoders.springautoui.util.detection.model.DetectedMethodModel;
 import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
+import jakarta.servlet.ServletContext;
 import org.springframework.beans.factory.ListableBeanFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.config.BeanDefinition;
@@ -12,10 +13,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.*;
 
 import java.lang.reflect.Method;
 import java.util.*;
@@ -25,11 +23,15 @@ public class ControllerMethodDetector {
 
     private final ListableBeanFactory listableBeanFactory;
     private final PropertiesService propertiesService;
+    private final ServletContext servletContext;
+
 
     @Autowired
-    public ControllerMethodDetector(ListableBeanFactory listableBeanFactory, PropertiesService propertiesService) {
+    public ControllerMethodDetector(ListableBeanFactory listableBeanFactory, PropertiesService propertiesService, ServletContext servletContext) {
         this.listableBeanFactory = listableBeanFactory;
         this.propertiesService = propertiesService;
+
+        this.servletContext = servletContext;
     }
 
 
@@ -104,8 +106,8 @@ public class ControllerMethodDetector {
         List<Method> detectedMethods = this.getDetectedMethods();
 
         for (Method detectedMethod : detectedMethods) {
-            DetectedMethodModel methodModel = new DetectedMethodModel();
-            methodModel.setHttpMethod(this.getHttpMethod(detectedMethod));
+
+            DetectedMethodModel methodModel = this.getMethodDetails(detectedMethod);
 
 
             detectedMethodModels.add(methodModel);
@@ -113,23 +115,50 @@ public class ControllerMethodDetector {
         return detectedMethodModels;
     }
 
-    private HttpMethod getHttpMethod(Method method) {
+    private DetectedMethodModel getMethodDetails(Method method) {
+
+        DetectedMethodModel methodModel = new DetectedMethodModel();
+        HttpMethod httpMethod;
+        String urlPattern;
+
 
         RequestMapping requestMapping = method.getAnnotation(RequestMapping.class);
+
         if (requestMapping != null) {
-            return HttpMethod.valueOf(requestMapping.method()[0].name());
+
+            urlPattern = requestMapping.value()[0];
+            httpMethod = HttpMethod.valueOf(requestMapping.method()[0].name());
+
         } else {
+
             if (method.getAnnotation(GetMapping.class) != null) {
-                return HttpMethod.GET;
+
+                urlPattern = method.getAnnotation(GetMapping.class).value()[0];
+                httpMethod = HttpMethod.GET;
+
             } else if (method.getAnnotation(PostMapping.class) != null) {
-                return HttpMethod.POST;
+
+                urlPattern = method.getAnnotation(PostMapping.class).value()[0];
+                httpMethod = HttpMethod.POST;
+
             } else if (method.getAnnotation(PutMapping.class) != null) {
-                return HttpMethod.PUT;
+
+                urlPattern = method.getAnnotation(PutMapping.class).value()[0];
+                httpMethod = HttpMethod.PUT;
+
             } else {
-                return HttpMethod.DELETE;
+
+                urlPattern = method.getAnnotation(DeleteMapping.class).value()[0];
+                httpMethod = HttpMethod.DELETE;
             }
 
         }
+
+
+        methodModel.setHttpMethod(httpMethod);
+        methodModel.setUrl(servletContext.getContextPath() + urlPattern);
+
+        return methodModel;
     }
 
 
