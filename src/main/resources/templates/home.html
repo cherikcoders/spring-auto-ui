@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xmlns:th="https://www.thymeleaf.org">
+<head th:replace="~{fragments/resources::head}">
+</head>
+<body>
+<div th:replace="~{fragments/resources::pre-loader}"></div>
+<div th:replace="~{fragments/header::header}"></div>
+<div th:replace="~{fragments/header::right-sidebar}"></div>
+<div th:replace="~{fragments/header::left-sidebar}"></div>
+
+
+<!-- js -->
+<script th:src="@{/scripts/core.js}"></script>
+<script th:src="@{/scripts/script.min.js}"></script>
+<script th:src="@{/scripts/process.js}"></script>
+<script th:src="@{/scripts/layout-settings.js}"></script>
+<script th:src="@{/plugins/apexcharts/apexcharts.min.js}"></script>
+<script th:src="@{/plugins/datatables/js/jquery.dataTables.min.js}"></script>
+<script th:src="@{/plugins/datatables/js/dataTables.bootstrap4.min.js}"></script>
+<script th:src="@{/plugins/datatables/js/dataTables.responsive.min.js}"></script>
+<script th:src="@{/plugins/datatables/js/responsive.bootstrap4.min.js}"></script>
+<script th:src="@{/scripts/dashboard3.js}"></script>
+</body>
+</html>
