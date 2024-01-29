@@ -3,6 +3,8 @@ package ir.cherikcoders.springautoui.util.detection;
 import ir.cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
 import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
 import ir.cherikcoders.springautoui.util.detection.model.DetectedMethodModel;
+import ir.cherikcoders.springautoui.util.detection.model.InputSourceEnum;
+import ir.cherikcoders.springautoui.util.detection.model.MethodInputModel;
 import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
 import jakarta.servlet.ServletContext;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -15,7 +17,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
+import java.lang.reflect.Parameter;
 import java.util.*;
 
 @Component
@@ -157,9 +161,38 @@ public class ControllerMethodDetector {
 
         methodModel.setHttpMethod(httpMethod);
         methodModel.setUrl(servletContext.getContextPath() + urlPattern);
-
+        methodModel.setMethodInputModelList(this.getInputParameters(method));
         return methodModel;
     }
+
+    private List<MethodInputModel> getInputParameters(Method method) {
+        List<MethodInputModel> inputParameters = new ArrayList<>();
+        Parameter[] parameters = method.getParameters();
+
+        for (Parameter parameter : parameters) {
+            MethodInputModel parameterModel = new MethodInputModel();
+            parameterModel.setName(parameter.getName());
+            parameterModel.setType(parameter.getType().getSimpleName());
+
+            Annotation[] annotations = parameter.getAnnotations();
+            for (Annotation annotation : annotations) {
+                if (annotation instanceof PathVariable) {
+                    parameterModel.setInputTypeEnum(InputSourceEnum.PATH_VARIABLE);
+                } else if (annotation instanceof RequestParam) {
+                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_PARAM);
+                } else if (annotation instanceof RequestHeader) {
+                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_HEADER);
+                } else if (annotation instanceof RequestBody) {
+                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_BODY);
+                }
+            }
+
+            inputParameters.add(parameterModel);
+        }
+
+        return inputParameters;
+    }
+
 
 
 }

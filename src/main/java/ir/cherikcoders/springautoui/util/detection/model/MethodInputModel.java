@@ -2,16 +2,26 @@ package ir.cherikcoders.springautoui.util.detection.model;
 
 public class MethodInputModel {
 
-    private InputTypeEnum inputTypeEnum;
+    private InputSourceEnum inputSourceEnum;
 
     private String name;
 
-    public InputTypeEnum getInputTypeEnum() {
-        return inputTypeEnum;
+    public String getType() {
+        return type;
     }
 
-    public void setInputTypeEnum(InputTypeEnum inputTypeEnum) {
-        this.inputTypeEnum = inputTypeEnum;
+    public void setType(String type) {
+        this.type = type;
+    }
+
+    private String type;
+
+    public InputSourceEnum getInputTypeEnum() {
+        return inputSourceEnum;
+    }
+
+    public void setInputTypeEnum(InputSourceEnum inputSourceEnum) {
+        this.inputSourceEnum = inputSourceEnum;
     }
 
     public String getName() {
