@@ -11,6 +11,8 @@ public class PropertiesConfiguration {
     private DetectionTypeEnum detectionType = DetectionTypeEnum.INCLUDE;
     private String packageToScan="";
 
+    private String title="Auto UI";
+
     public DetectionTypeEnum getDetectionType() {
         return detectionType;
     }
@@ -25,5 +27,13 @@ public class PropertiesConfiguration {
 
     public void setPackageToScan(String packageToScan) {
         this.packageToScan = packageToScan;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
     }
 }

@@ -11,6 +11,12 @@
       "type": "java.lang.String",
       "defaultValue": "",
       "description": "The package(s) that contain your @Controller/@ResController classes. (accepts multiple comma separated values)"
+    },
+    {
+      "name": "spring-auto-ui.title",
+      "type": "java.lang.String",
+      "defaultValue": "",
+      "description": "Dashboard title"
     }
   ]
 }
