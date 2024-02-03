@@ -2,9 +2,7 @@ package ir.cherikcoders.springautoui.util.detection;
 
 import ir.cherikcoders.springautoui.util.annotaions.ExcludeFromUI;
 import ir.cherikcoders.springautoui.util.annotaions.IncludeInUI;
-import ir.cherikcoders.springautoui.util.detection.model.DetectedMethodModel;
-import ir.cherikcoders.springautoui.util.detection.model.InputSourceEnum;
-import ir.cherikcoders.springautoui.util.detection.model.MethodInputModel;
+import ir.cherikcoders.springautoui.util.detection.model.*;
 import ir.cherikcoders.springautoui.util.propertiesConfig.PropertiesService;
 import jakarta.servlet.ServletContext;
 import org.springframework.beans.factory.ListableBeanFactory;
@@ -18,8 +16,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
 import java.lang.annotation.Annotation;
-import java.lang.reflect.Method;
-import java.lang.reflect.Parameter;
+import java.lang.reflect.*;
 import java.util.*;
 
 @Component
@@ -39,10 +36,12 @@ public class ControllerMethodDetector {
     }
 
 
-    public List<Method> getDetectedMethods() throws ClassNotFoundException {
+    public HashMap<Class<?>, List<Method>> getDetectedMethods() throws ClassNotFoundException {
 
-        List<Method> detectedMethods = new ArrayList<>();
-        List<Method> excludeMetods = new ArrayList<>();
+        HashMap<Class<?>, List<Method>> classMethodsHashMap = new HashMap<>();
+
+//        List<Method> detectedMethods = new ArrayList<>();
+//        List<Method> excludeMetods = new ArrayList<>();
 //        Map<String, Object> controllers = listableBeanFactory.getBeansWithAnnotation(Controller.class);
 
         Set<Class<?>> controller2 = scanControllers();
@@ -50,40 +49,50 @@ public class ControllerMethodDetector {
         switch (propertiesService.getDetectionType()) {
 
             case INCLUDE -> controller2.forEach(aClass -> {
+                List<Method> classMethods = new ArrayList<>();
 
                 if (!aClass.isAnnotationPresent(ExcludeFromUI.class)) {
                     for (Method method : aClass.getDeclaredMethods()) {
                         if (!method.isAnnotationPresent(ExcludeFromUI.class)) {
-                            detectedMethods.add(method);
+//                            detectedMethods.add(method);
+                            classMethods.add(method);
                         }
                     }
                 }
+
+                classMethodsHashMap.put(aClass, classMethods);
             });
 
             case EXCLUDE -> {
                 controller2.forEach(aClass -> {
 
+                    List<Method> classMethods = new ArrayList<>();
+
                     if (aClass.isAnnotationPresent(IncludeInUI.class)) {
                         for (Method method : aClass.getDeclaredMethods()) {
                             if (!method.isAnnotationPresent(ExcludeFromUI.class)) {
-                                detectedMethods.add(method);
+//                                detectedMethods.add(method);
+                                classMethods.add(method);
                             }
                         }
 
                     } else {
                         for (Method method : aClass.getDeclaredMethods()) {
                             if (method.isAnnotationPresent(IncludeInUI.class)) {
-                                detectedMethods.add(method);
+//                                detectedMethods.add(method);
+                                classMethods.add(method);
                             }
                         }
                     }
+
+                    classMethodsHashMap.put(aClass, classMethods);
                 });
 
-                detectedMethods.retainAll(excludeMetods);
+//                detectedMethods.retainAll(excludeMetods);
             }
 
         }
-        return detectedMethods;
+        return classMethodsHashMap;
     }
 
     public Set<Class<?>> scanControllers() {
@@ -94,6 +103,7 @@ public class ControllerMethodDetector {
         Set<Class<?>> controllerClasses = new HashSet<>();
         for (BeanDefinition beanDefinition : provider.findCandidateComponents(propertiesService.getPackageToScan())) {
             try {
+
                 Class<?> controllerClass = Class.forName(beanDefinition.getBeanClassName());
                 controllerClasses.add(controllerClass);
             } catch (ClassNotFoundException e) {
@@ -104,19 +114,24 @@ public class ControllerMethodDetector {
         return controllerClasses;
     }
 
-    public List<DetectedMethodModel> AllEndPointsDetail() throws ClassNotFoundException {
+    public HashMap<Class<?>, List<DetectedMethodModel>> AllEndPointsDetail() throws ClassNotFoundException {
 
         List<DetectedMethodModel> detectedMethodModels = new ArrayList<>();
-        List<Method> detectedMethods = this.getDetectedMethods();
-
-        for (Method detectedMethod : detectedMethods) {
-
-            DetectedMethodModel methodModel = this.getMethodDetails(detectedMethod);
+        HashMap<Class<?>, List<Method>> detectedMethodsMap = this.getDetectedMethods();
+        HashMap<Class<?>, List<DetectedMethodModel>> methodsModelMap = new HashMap<>();
 
 
-            detectedMethodModels.add(methodModel);
-        }
-        return detectedMethodModels;
+        detectedMethodsMap.forEach((aClass, methods) -> {
+            for (Method method : methods) {
+
+                DetectedMethodModel methodModel = this.getMethodDetails(method);
+                detectedMethodModels.add(methodModel);
+            }
+            methodsModelMap.put(aClass, detectedMethodModels);
+        });
+
+
+        return methodsModelMap;
     }
 
     private DetectedMethodModel getMethodDetails(Method method) {
@@ -162,28 +177,38 @@ public class ControllerMethodDetector {
         methodModel.setHttpMethod(httpMethod);
         methodModel.setUrl(servletContext.getContextPath() + urlPattern);
         methodModel.setMethodInputModelList(this.getInputParameters(method));
+        methodModel.setMethodOutputModel(this.getOutputMethodModel(method));
+
         return methodModel;
     }
 
     private List<MethodInputModel> getInputParameters(Method method) {
+
         List<MethodInputModel> inputParameters = new ArrayList<>();
         Parameter[] parameters = method.getParameters();
 
         for (Parameter parameter : parameters) {
+
             MethodInputModel parameterModel = new MethodInputModel();
             parameterModel.setName(parameter.getName());
-            parameterModel.setType(parameter.getType().getSimpleName());
+            parameterModel.setType(parameter.getType());
+
+            Class<?> parameterType = parameter.getType();
+            if (parameterType.getDeclaredFields().length > 0) {
+                parameterModel.setFieldsModel(this.getFields(parameterType));
+            }
+
 
             Annotation[] annotations = parameter.getAnnotations();
             for (Annotation annotation : annotations) {
                 if (annotation instanceof PathVariable) {
-                    parameterModel.setInputTypeEnum(InputSourceEnum.PATH_VARIABLE);
+                    parameterModel.setInputSourceEnum(InputSourceEnum.PATH_VARIABLE);
                 } else if (annotation instanceof RequestParam) {
-                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_PARAM);
+                    parameterModel.setInputSourceEnum(InputSourceEnum.REQUEST_PARAM);
                 } else if (annotation instanceof RequestHeader) {
-                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_HEADER);
+                    parameterModel.setInputSourceEnum(InputSourceEnum.REQUEST_HEADER);
                 } else if (annotation instanceof RequestBody) {
-                    parameterModel.setInputTypeEnum(InputSourceEnum.REQUEST_BODY);
+                    parameterModel.setInputSourceEnum(InputSourceEnum.REQUEST_BODY);
                 }
             }
 
@@ -193,6 +218,82 @@ public class ControllerMethodDetector {
         return inputParameters;
     }
 
+    private MethodOutputModel getOutputMethodModel(Method method) {
 
+        MethodOutputModel methodOutputModel = new MethodOutputModel();
+
+        Class<?> returnType = method.getReturnType();
+
+
+        methodOutputModel.setReturnClass(returnType);
+        methodOutputModel.setName(returnType.getSimpleName());
+
+//        if (returnType.getDeclaredFields().length > 0) {
+        methodOutputModel.setFieldsModel(this.getFields(returnType));
+//        }
+
+        return methodOutputModel;
+    }
+
+
+    private ClassFieldsModel getFields(Class<?> aClass) {
+
+        ClassFieldsModel classFieldsModel = new ClassFieldsModel();
+
+        if (Collection.class.isAssignableFrom(aClass)) {
+
+            Type genericSuperclass = aClass.getGenericSuperclass();
+
+            if (genericSuperclass instanceof ParameterizedType) {
+
+                Type genericType = ((ParameterizedType) genericSuperclass).getActualTypeArguments()[0];
+                if (genericType instanceof Class<?> collectionType) {
+                    classFieldsModel.setInClass(genericType.getClass());
+                    if (Collection.class.isAssignableFrom(collectionType)) {
+                        // If the element type is also a Collection, recursively get its fields
+                        this.getFields(collectionType);
+                    } else {
+                        // If the element type is a custom model, get its fields
+                        classFieldsModel.setFields(List.of(collectionType.getDeclaredFields()));
+                    }
+                }
+
+//                if (genericType instanceof Class<?> collectionType) {
+//                    classFieldsModel.setInClass(genericType.getClass());
+//                    this.getFields(collectionType);
+//                }
+//                classFieldsModel.setInClass(genericType.getClass());
+            }else if (aClass.getTypeParameters().length > 0) {
+                // Check if it's a parameterized type
+                TypeVariable<?> typeVariable = aClass.getTypeParameters()[0];
+                Type[] bounds = typeVariable.getBounds();
+
+                if (bounds.length > 0 && bounds[0] instanceof Class<?> parameterizedType) {
+                    classFieldsModel.setInClass(parameterizedType);
+                    // Handle parameterized type as needed
+                }
+            }
+        } else if (!aClass.isPrimitive() && !aClass.isArray() && !isWrapperType(aClass) && !String.class.isAssignableFrom(aClass)) {
+            if (aClass.getDeclaredFields().length > 0) {
+
+                classFieldsModel.setFields(List.of(aClass.getDeclaredFields()));
+            }
+        }
+
+
+        return classFieldsModel;
+
+    }
+
+    private boolean isWrapperType(Class<?> clazz) {
+        return clazz.equals(Integer.class)
+                || clazz.equals(Long.class)
+                || clazz.equals(Short.class)
+                || clazz.equals(Float.class)
+                || clazz.equals(Double.class)
+                || clazz.equals(Byte.class)
+                || clazz.equals(Character.class)
+                || clazz.equals(Boolean.class);
+    }
 
 }

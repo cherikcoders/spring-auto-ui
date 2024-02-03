@@ -7,6 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 
 @SpringBootTest
@@ -21,7 +22,7 @@ class SpringAutoUiApplicationTests {
 
     @Test
     void getDetectedMethods() throws ClassNotFoundException {
-        List<Method> detectedMethods = controllerMethodDetector.getDetectedMethods();
+        HashMap<Class<?>, List<Method>> detectedMethods = controllerMethodDetector.getDetectedMethods();
     }
 
     @Test
